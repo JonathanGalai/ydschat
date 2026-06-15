@@ -6,7 +6,7 @@ import { ChatArea } from './components/ChatArea'
 import { MessageInput } from './components/MessageInput'
 import { AuthButton, TemporaryChatButton } from './components/AuthButton'
 import { LoadingScreen } from './components/LoadingScreen'
-import { getGreetingResponse, typeOutText } from './lib/chatbot'
+import { getChatResponse, typeOutText } from './lib/chatbot'
 import type { Message } from './types/chat'
 import './App.css'
 
@@ -106,8 +106,7 @@ function App() {
   const handleSend = async (content: string) => {
     if (isSending) return
 
-    const response = getGreetingResponse(content, getUserName(user))
-    if (!response) return
+    const response = getChatResponse(content, getUserName(user))
 
     setIsSending(true)
 
