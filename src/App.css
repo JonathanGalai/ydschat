@@ -666,6 +666,15 @@
   cursor: not-allowed;
 }
 
+.message-input__stop {
+  background: var(--text-primary) !important;
+  color: var(--bg-primary) !important;
+}
+
+.message-input__stop:hover {
+  background: #fff !important;
+}
+
 .message-input__hint {
   text-align: center;
   font-size: 12px;

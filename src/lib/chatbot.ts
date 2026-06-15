@@ -36,11 +36,29 @@ export function getChatResponse(input: string, username?: string | null): string
 export async function typeOutText(
   text: string,
   onUpdate: (partial: string) => void,
-  charDelayMs = 28
-): Promise<void> {
+  options?: { charDelayMs?: number; shouldStop?: () => boolean }
+): Promise<boolean> {
+  const charDelayMs = options?.charDelayMs ?? 28
   for (let i = 1; i <= text.length; i++) {
+    if (options?.shouldStop?.()) return false
     onUpdate(text.slice(0, i))
     const jitter = Math.random() * 18
     await new Promise((r) => setTimeout(r, charDelayMs + jitter))
   }
+  return true
+}
+
+export async function interruptibleDelay(
+  ms: number,
+  shouldStop: () => boolean
+): Promise<boolean> {
+  const step = 50
+  let elapsed = 0
+  while (elapsed < ms) {
+    if (shouldStop()) return false
+    const wait = Math.min(step, ms - elapsed)
+    await new Promise((r) => setTimeout(r, wait))
+    elapsed += wait
+  }
+  return true
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useChats } from './hooks/useChats'
 import { Sidebar } from './components/Sidebar'
@@ -6,7 +6,7 @@ import { ChatArea } from './components/ChatArea'
 import { MessageInput } from './components/MessageInput'
 import { AuthButton, TemporaryChatButton } from './components/AuthButton'
 import { LoadingScreen } from './components/LoadingScreen'
-import { getChatResponse, typeOutText } from './lib/chatbot'
+import { getChatResponse, typeOutText, interruptibleDelay } from './lib/chatbot'
 import type { Message } from './types/chat'
 import './App.css'
 
@@ -31,10 +31,12 @@ function App() {
   const [isSending, setIsSending] = useState(false)
   const [appReady, setAppReady] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState('Connecting...')
+  const stopRef = useRef(false)
 
   const firebaseReady = !authLoading
   const chatsReady = !user || !chatsLoading
   const allLoaded = firebaseReady && chatsReady
+  const isBotWriting = typingPhase !== 'idle'
 
   useEffect(() => {
     if (!firebaseReady) {
@@ -67,16 +69,26 @@ function App() {
     setTypingPhase('idle')
   }
 
+  const handleStop = useCallback(() => {
+    stopRef.current = true
+    resetChatState()
+    setIsSending(false)
+  }, [])
+
   const handleTemporaryChat = useCallback(() => {
+    stopRef.current = true
     setIsTemporaryChat(true)
     setActiveChatId(null)
     setLocalMessages([])
     resetChatState()
+    setIsSending(false)
   }, [])
 
   const handleNewChat = useCallback(async () => {
+    stopRef.current = true
     setLocalMessages([])
     resetChatState()
+    setIsSending(false)
     setIsTemporaryChat(false)
     if (user) {
       const chatId = await createChat()
@@ -88,10 +100,12 @@ function App() {
   }, [user, createChat])
 
   const handleSelectChat = (chatId: string) => {
+    stopRef.current = true
     setActiveChatId(chatId)
     setIsTemporaryChat(false)
     setLocalMessages([])
     resetChatState()
+    setIsSending(false)
   }
 
   const handleDeleteChat = async (chatId: string) => {
@@ -100,6 +114,7 @@ function App() {
       setActiveChatId(null)
       setLocalMessages([])
       resetChatState()
+      setIsSending(false)
     }
   }
 
@@ -107,7 +122,7 @@ function App() {
     if (isSending) return
 
     const response = getChatResponse(content, getUserName(user))
-
+    stopRef.current = false
     setIsSending(true)
 
     const userMessage: Message = {
@@ -122,13 +137,17 @@ function App() {
       timestamp: Date.now() + 1,
     }
 
+    const shouldStop = () => stopRef.current
+
     const deliverAssistant = async (chatId?: string | null) => {
       setTypingPhase('thinking')
       setStreamedText('')
-      await new Promise((r) => setTimeout(r, 700))
+
+      if (!(await interruptibleDelay(700, shouldStop))) return
 
       setTypingPhase('streaming')
-      await typeOutText(response, setStreamedText)
+      const completed = await typeOutText(response, setStreamedText, { shouldStop })
+      if (!completed || shouldStop()) return
 
       if (user && chatId && !isTemporaryChat) {
         await addMessage(chatId, assistantMessage)
@@ -146,14 +165,19 @@ function App() {
         chatId = await createChat()
         setActiveChatId(chatId)
       }
+      if (shouldStop()) return
       await addMessage(chatId, userMessage)
+      if (shouldStop()) return
       await deliverAssistant(chatId)
     } else {
       setLocalMessages((prev) => [...prev, userMessage])
+      if (shouldStop()) return
       await deliverAssistant()
     }
 
-    setIsSending(false)
+    if (!shouldStop()) {
+      setIsSending(false)
+    }
   }
 
   if (!appReady) {
@@ -203,7 +227,12 @@ function App() {
           typingPhase={typingPhase}
           streamedText={streamedText}
         />
-        <MessageInput onSend={handleSend} isSending={isSending} />
+        <MessageInput
+          onSend={handleSend}
+          onStop={handleStop}
+          isBotWriting={isBotWriting}
+          isSending={isSending}
+        />
       </main>
     </div>
   )

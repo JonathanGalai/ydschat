@@ -2,10 +2,12 @@ import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from 
 
 interface MessageInputProps {
   onSend: (message: string) => void
+  onStop: () => void
+  isBotWriting: boolean
   isSending: boolean
 }
 
-export function MessageInput({ onSend, isSending }: MessageInputProps) {
+export function MessageInput({ onSend, onStop, isBotWriting, isSending }: MessageInputProps) {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -50,11 +52,24 @@ export function MessageInput({ onSend, isSending }: MessageInputProps) {
           placeholder="Send a message..."
           rows={1}
         />
-        <button type="submit" disabled={!input.trim() || isSending} aria-label="Send message">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-          </svg>
-        </button>
+        {isBotWriting ? (
+          <button
+            type="button"
+            className="message-input__stop"
+            onClick={onStop}
+            aria-label="Stop generating"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="2" />
+            </svg>
+          </button>
+        ) : (
+          <button type="submit" disabled={!input.trim()} aria-label="Send message">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+            </svg>
+          </button>
+        )}
       </div>
       <p className="message-input__hint">YDS Chat can make mistakes. Check important info.</p>
     </form>
