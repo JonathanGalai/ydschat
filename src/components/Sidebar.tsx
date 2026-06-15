@@ -38,7 +38,7 @@ export function Sidebar({
       <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
         <div className="sidebar__header">
           <button className="sidebar__new-chat" onClick={onNewChat}>
-            <img src="/icons/new-chat.png" alt="" className="sidebar__icon" width={16} height={16} />
+            <img src="/icons/new-chat.png" alt="" className="sidebar__icon" width={22} height={22} />
             New chat
           </button>
         </div>

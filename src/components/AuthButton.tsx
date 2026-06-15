@@ -46,7 +46,7 @@ export function TemporaryChatButton({ active, onClick }: TemporaryChatButtonProp
       className={`temp-chat-button ${active ? 'temp-chat-button--active' : ''}`}
       onClick={onClick}
     >
-      <img src="/icons/temporary.png" alt="" className="temp-chat-button__icon" width={16} height={16} />
+      <img src="/icons/temporary.png" alt="" className="temp-chat-button__icon" width={22} height={22} />
       Temporary chat
     </button>
   )

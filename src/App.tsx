@@ -203,7 +203,7 @@ function App() {
           typingPhase={typingPhase}
           streamedText={streamedText}
         />
-        <MessageInput onSend={handleSend} disabled={isSending} />
+        <MessageInput onSend={handleSend} isSending={isSending} />
       </main>
     </div>
   )
