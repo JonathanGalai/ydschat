@@ -1,29 +1,13 @@
 import type { User } from 'firebase/auth'
 
 interface AuthButtonProps {
-  user: User | null
   loading: boolean
   onSignIn: () => void
-  onSignOut: () => void
 }
 
-export function AuthButton({ user, loading, onSignIn, onSignOut }: AuthButtonProps) {
+export function AuthButton({ loading, onSignIn }: AuthButtonProps) {
   if (loading) {
     return <div className="auth-button auth-button--loading">...</div>
-  }
-
-  if (user) {
-    return (
-      <div className="auth-user">
-        {user.photoURL && (
-          <img src={user.photoURL} alt="" className="auth-user__avatar" />
-        )}
-        <span className="auth-user__name">{user.displayName ?? user.email}</span>
-        <button className="auth-button auth-button--outline" onClick={onSignOut}>
-          Sign out
-        </button>
-      </div>
-    )
   }
 
   return (
@@ -48,5 +32,59 @@ export function AuthButton({ user, loading, onSignIn, onSignOut }: AuthButtonPro
       </svg>
       Sign in with Google
     </button>
+  )
+}
+
+interface TemporaryChatButtonProps {
+  active: boolean
+  onClick: () => void
+}
+
+export function TemporaryChatButton({ active, onClick }: TemporaryChatButtonProps) {
+  return (
+    <button
+      className={`temp-chat-button ${active ? 'temp-chat-button--active' : ''}`}
+      onClick={onClick}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        <line x1="9" y1="10" x2="15" y2="10" />
+      </svg>
+      Temporary chat
+    </button>
+  )
+}
+
+interface SidebarUserProps {
+  user: User
+  onSignOut: () => void
+}
+
+export function SidebarUser({ user, onSignOut }: SidebarUserProps) {
+  const name = user.displayName ?? user.email ?? 'Account'
+
+  return (
+    <div className="sidebar-user">
+      {user.photoURL ? (
+        <img src={user.photoURL} alt="" className="sidebar-user__avatar" />
+      ) : (
+        <div className="sidebar-user__avatar sidebar-user__avatar--placeholder">
+          {name.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="sidebar-user__info">
+        <span className="sidebar-user__name">{name}</span>
+        {user.email && user.displayName && (
+          <span className="sidebar-user__email">{user.email}</span>
+        )}
+      </div>
+      <button className="sidebar-user__signout" onClick={onSignOut} aria-label="Sign out">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+      </button>
+    </div>
   )
 }

@@ -32,7 +32,6 @@ export function ChatArea({ messages, typingPhase, streamedText }: ChatAreaProps)
         <div className="chat-welcome">
           <h1>YDS Chat</h1>
           <p>How can I help you today?</p>
-          <p className="chat-welcome__hint">Try saying <strong>hi</strong> or <strong>שלום</strong></p>
         </div>
       </div>
     )

@@ -1,15 +1,19 @@
 import type { CSSProperties } from 'react'
+import type { User } from 'firebase/auth'
 import type { Chat } from '../types/chat'
+import { SidebarUser } from './AuthButton'
 
 interface SidebarProps {
   isOpen: boolean
   chats: Chat[]
   activeChatId: string | null
   isSignedIn: boolean
+  user: User | null
   onClose: () => void
   onNewChat: () => void
   onSelectChat: (chatId: string) => void
   onDeleteChat: (chatId: string) => void
+  onSignOut: () => void
 }
 
 export function Sidebar({
@@ -17,10 +21,12 @@ export function Sidebar({
   chats,
   activeChatId,
   isSignedIn,
+  user,
   onClose,
   onNewChat,
   onSelectChat,
   onDeleteChat,
+  onSignOut,
 }: SidebarProps) {
   return (
     <>
@@ -81,6 +87,12 @@ export function Sidebar({
             ))
           )}
         </div>
+
+        {user && (
+          <div className="sidebar__footer">
+            <SidebarUser user={user} onSignOut={onSignOut} />
+          </div>
+        )}
       </aside>
     </>
   )

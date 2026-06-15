@@ -1,19 +1,22 @@
 const EN_GREETINGS = ['hi', 'hello', 'hey']
 const HE_GREETINGS = ['הי', 'היי', 'שלום']
 
-const EN_RESPONSE = "Hello! I'm YDS Chat, what can I help you with?"
-const HE_RESPONSE = 'שלום! אני YDS Chat, במה אוכל לעזור?'
+function getDisplayName(username?: string | null): string {
+  if (username?.trim()) return username.trim()
+  return 'there'
+}
 
-export function getGreetingResponse(input: string): string | null {
+export function getGreetingResponse(input: string, username?: string | null): string | null {
   const trimmed = input.trim()
   const lower = trimmed.toLowerCase()
+  const name = getDisplayName(username)
 
   if (HE_GREETINGS.some((g) => trimmed === g || lower === g)) {
-    return HE_RESPONSE
+    return `היי, אני YDS Chat, איך אפשר לעזור לך היום (${name})?`
   }
 
   if (EN_GREETINGS.includes(lower)) {
-    return EN_RESPONSE
+    return `Hi! I'm YDS Chat, how can I help you today (${name})?`
   }
 
   return null

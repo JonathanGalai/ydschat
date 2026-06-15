@@ -4,13 +4,18 @@ import { useChats } from './hooks/useChats'
 import { Sidebar } from './components/Sidebar'
 import { ChatArea } from './components/ChatArea'
 import { MessageInput } from './components/MessageInput'
-import { AuthButton } from './components/AuthButton'
+import { AuthButton, TemporaryChatButton } from './components/AuthButton'
 import { LoadingScreen } from './components/LoadingScreen'
 import { getGreetingResponse, typeOutText } from './lib/chatbot'
 import type { Message } from './types/chat'
 import './App.css'
 
 type TypingPhase = 'idle' | 'thinking' | 'streaming'
+
+function getUserName(user: { displayName: string | null; email: string | null } | null) {
+  if (!user) return null
+  return user.displayName ?? user.email?.split('@')[0] ?? null
+}
 
 function App() {
   const { user, loading: authLoading, signInWithGoogle, logout } = useAuth()
@@ -19,6 +24,7 @@ function App() {
     () => typeof window !== 'undefined' && window.innerWidth >= 1024
   )
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
+  const [isTemporaryChat, setIsTemporaryChat] = useState(false)
   const [localMessages, setLocalMessages] = useState<Message[]>([])
   const [typingPhase, setTypingPhase] = useState<TypingPhase>('idle')
   const [streamedText, setStreamedText] = useState('')
@@ -53,13 +59,25 @@ function App() {
   }, [allLoaded])
 
   const activeChat = chats.find((c) => c.id === activeChatId)
-  const messages =
-    user && activeChatId && activeChat ? activeChat.messages : localMessages
+  const useLocalChat = !user || isTemporaryChat
+  const messages = useLocalChat ? localMessages : activeChat?.messages ?? []
+
+  const resetChatState = () => {
+    setStreamedText('')
+    setTypingPhase('idle')
+  }
+
+  const handleTemporaryChat = useCallback(() => {
+    setIsTemporaryChat(true)
+    setActiveChatId(null)
+    setLocalMessages([])
+    resetChatState()
+  }, [])
 
   const handleNewChat = useCallback(async () => {
     setLocalMessages([])
-    setStreamedText('')
-    setTypingPhase('idle')
+    resetChatState()
+    setIsTemporaryChat(false)
     if (user) {
       const chatId = await createChat()
       setActiveChatId(chatId)
@@ -71,9 +89,9 @@ function App() {
 
   const handleSelectChat = (chatId: string) => {
     setActiveChatId(chatId)
+    setIsTemporaryChat(false)
     setLocalMessages([])
-    setStreamedText('')
-    setTypingPhase('idle')
+    resetChatState()
   }
 
   const handleDeleteChat = async (chatId: string) => {
@@ -81,15 +99,14 @@ function App() {
     if (activeChatId === chatId) {
       setActiveChatId(null)
       setLocalMessages([])
-      setStreamedText('')
-      setTypingPhase('idle')
+      resetChatState()
     }
   }
 
   const handleSend = async (content: string) => {
     if (isSending) return
 
-    const response = getGreetingResponse(content)
+    const response = getGreetingResponse(content, getUserName(user))
     if (!response) return
 
     setIsSending(true)
@@ -114,7 +131,7 @@ function App() {
       setTypingPhase('streaming')
       await typeOutText(response, setStreamedText)
 
-      if (user && chatId) {
+      if (user && chatId && !isTemporaryChat) {
         await addMessage(chatId, assistantMessage)
       } else {
         setLocalMessages((prev) => [...prev, assistantMessage])
@@ -124,7 +141,7 @@ function App() {
       setTypingPhase('idle')
     }
 
-    if (user) {
+    if (user && !isTemporaryChat) {
       let chatId = activeChatId
       if (!chatId) {
         chatId = await createChat()
@@ -149,12 +166,14 @@ function App() {
       <Sidebar
         isOpen={sidebarOpen}
         chats={chats}
-        activeChatId={activeChatId}
+        activeChatId={isTemporaryChat ? null : activeChatId}
         isSignedIn={!!user}
+        user={user}
         onClose={() => setSidebarOpen(false)}
         onNewChat={handleNewChat}
         onSelectChat={handleSelectChat}
         onDeleteChat={handleDeleteChat}
+        onSignOut={logout}
       />
 
       <main className="main">
@@ -172,12 +191,11 @@ function App() {
           </button>
           <span className="header__title">YDS Chat</span>
           <div className="header__auth">
-            <AuthButton
-              user={user}
-              loading={authLoading}
-              onSignIn={signInWithGoogle}
-              onSignOut={logout}
-            />
+            {user ? (
+              <TemporaryChatButton active={isTemporaryChat} onClick={handleTemporaryChat} />
+            ) : (
+              <AuthButton loading={authLoading} onSignIn={signInWithGoogle} />
+            )}
           </div>
         </header>
 
