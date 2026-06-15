@@ -3,6 +3,7 @@ import {
   ref,
   push,
   set,
+  get,
   onValue,
   remove,
   update,
@@ -63,7 +64,8 @@ export function useChats(userId: string | undefined) {
   const addMessage = async (chatId: string, message: Message) => {
     if (!userId) return
     const chatRef = ref(db, `users/${userId}/chats/${chatId}`)
-    const chat = chats.find((c) => c.id === chatId)
+    const snapshot = await get(chatRef)
+    const chat = snapshot.val() as Omit<Chat, 'id'> | null
     const messages = [...normalizeMessages(chat?.messages), message]
     const title =
       chat?.title === 'New chat' && message.role === 'user'
