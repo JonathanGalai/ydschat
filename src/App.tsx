@@ -64,6 +64,7 @@ function App() {
   const activeChat = chats.find((c) => c.id === activeChatId)
   const useLocalChat = !user || isTemporaryChat
   const messages = useLocalChat ? localMessages : activeChat?.messages ?? []
+  const showTemporaryButton = !!user && messages.length === 0
 
   const resetChatState = () => {
     streamedTextRef.current = ''
@@ -247,7 +248,12 @@ function App() {
           <span className="header__title">YDS Chat</span>
           <div className="header__auth">
             {user ? (
-              <TemporaryChatButton active={isTemporaryChat} onClick={handleTemporaryChat} />
+              showTemporaryButton ? (
+                <TemporaryChatButton
+                  active={isTemporaryChat}
+                  onClick={handleTemporaryChat}
+                />
+              ) : null
             ) : (
               <AuthButton loading={authLoading} onSignIn={signInWithGoogle} />
             )}
