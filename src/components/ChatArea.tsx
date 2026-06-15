@@ -8,12 +8,13 @@ interface ChatAreaProps {
 
 export function ChatArea({ messages, isTyping }: ChatAreaProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
+  const safeMessages = Array.isArray(messages) ? messages : []
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
+  }, [safeMessages, isTyping])
 
-  if (messages.length === 0) {
+  if (safeMessages.length === 0) {
     return (
       <div className="chat-area chat-area--empty">
         <div className="chat-welcome">
@@ -27,7 +28,7 @@ export function ChatArea({ messages, isTyping }: ChatAreaProps) {
   return (
     <div className="chat-area">
       <div className="chat-messages">
-        {messages.map((msg, i) => (
+        {safeMessages.map((msg, i) => (
           <div key={i} className={`message message--${msg.role}`}>
             <div className="message__avatar">
               {msg.role === 'user' ? (

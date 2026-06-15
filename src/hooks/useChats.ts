@@ -9,6 +9,7 @@ import {
   type Unsubscribe,
 } from 'firebase/database'
 import { db } from '../lib/firebase'
+import { normalizeMessages } from '../lib/messages'
 import type { Chat, Message } from '../types/chat'
 
 export function useChats(userId: string | undefined) {
@@ -28,10 +29,14 @@ export function useChats(userId: string | undefined) {
       if (!data) {
         setChats([])
       } else {
-        const chatList: Chat[] = Object.entries(data).map(([id, value]) => ({
-          id,
-          ...(value as Omit<Chat, 'id'>),
-        }))
+        const chatList: Chat[] = Object.entries(data).map(([id, value]) => {
+          const chat = value as Omit<Chat, 'id'>
+          return {
+            id,
+            ...chat,
+            messages: normalizeMessages(chat.messages),
+          }
+        })
         chatList.sort((a, b) => b.updatedAt - a.updatedAt)
         setChats(chatList)
       }
@@ -59,7 +64,7 @@ export function useChats(userId: string | undefined) {
     if (!userId) return
     const chatRef = ref(db, `users/${userId}/chats/${chatId}`)
     const chat = chats.find((c) => c.id === chatId)
-    const messages = [...(chat?.messages ?? []), message]
+    const messages = [...normalizeMessages(chat?.messages), message]
     const title =
       chat?.title === 'New chat' && message.role === 'user'
         ? message.content.slice(0, 40)

@@ -20,7 +20,8 @@ function App() {
   const [isSending, setIsSending] = useState(false)
 
   const activeChat = chats.find((c) => c.id === activeChatId)
-  const messages = user && activeChatId && activeChat ? activeChat.messages : localMessages
+  const messages =
+    user && activeChatId && activeChat ? activeChat.messages : localMessages
 
   const handleNewChat = useCallback(async () => {
     setLocalMessages([])
