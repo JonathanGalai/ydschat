@@ -32,6 +32,7 @@ function App() {
   const [appReady, setAppReady] = useState(false)
   const [loadingStatus, setLoadingStatus] = useState('Connecting...')
   const stopRef = useRef(false)
+  const streamedTextRef = useRef('')
 
   const firebaseReady = !authLoading
   const chatsReady = !user || !chatsLoading
@@ -65,13 +66,13 @@ function App() {
   const messages = useLocalChat ? localMessages : activeChat?.messages ?? []
 
   const resetChatState = () => {
+    streamedTextRef.current = ''
     setStreamedText('')
     setTypingPhase('idle')
   }
 
   const handleStop = useCallback(() => {
     stopRef.current = true
-    resetChatState()
     setIsSending(false)
   }, [])
 
@@ -140,14 +141,46 @@ function App() {
     const shouldStop = () => stopRef.current
 
     const deliverAssistant = async (chatId?: string | null) => {
+      const savePartial = async () => {
+        const partial = streamedTextRef.current.trim()
+        if (partial) {
+          const partialMessage: Message = {
+            role: 'assistant',
+            content: partial,
+            timestamp: Date.now(),
+          }
+          if (user && chatId && !isTemporaryChat) {
+            await addMessage(chatId, partialMessage)
+          } else {
+            setLocalMessages((prev) => [...prev, partialMessage])
+          }
+        }
+        resetChatState()
+      }
+
       setTypingPhase('thinking')
+      streamedTextRef.current = ''
       setStreamedText('')
 
-      if (!(await interruptibleDelay(700, shouldStop))) return
+      if (!(await interruptibleDelay(700, shouldStop))) {
+        resetChatState()
+        return
+      }
 
       setTypingPhase('streaming')
-      const completed = await typeOutText(response, setStreamedText, { shouldStop })
-      if (!completed || shouldStop()) return
+      const completed = await typeOutText(
+        response,
+        (partial) => {
+          streamedTextRef.current = partial
+          setStreamedText(partial)
+        },
+        { shouldStop }
+      )
+
+      if (!completed || shouldStop()) {
+        await savePartial()
+        return
+      }
 
       if (user && chatId && !isTemporaryChat) {
         await addMessage(chatId, assistantMessage)
@@ -155,8 +188,7 @@ function App() {
         setLocalMessages((prev) => [...prev, assistantMessage])
       }
 
-      setStreamedText('')
-      setTypingPhase('idle')
+      resetChatState()
     }
 
     if (user && !isTemporaryChat) {
