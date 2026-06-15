@@ -1,25 +1,38 @@
 import { useEffect, useRef } from 'react'
 import type { Message } from '../types/chat'
 
+type TypingPhase = 'idle' | 'thinking' | 'streaming'
+
 interface ChatAreaProps {
   messages: Message[]
-  isTyping: boolean
+  typingPhase: TypingPhase
+  streamedText: string
 }
 
-export function ChatArea({ messages, isTyping }: ChatAreaProps) {
+function AssistantAvatar() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+    </svg>
+  )
+}
+
+export function ChatArea({ messages, typingPhase, streamedText }: ChatAreaProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const safeMessages = Array.isArray(messages) ? messages : []
+  const isTyping = typingPhase !== 'idle'
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [safeMessages, isTyping])
+  }, [safeMessages, typingPhase, streamedText])
 
-  if (safeMessages.length === 0) {
+  if (safeMessages.length === 0 && !isTyping) {
     return (
       <div className="chat-area chat-area--empty">
         <div className="chat-welcome">
           <h1>YDS Chat</h1>
           <p>How can I help you today?</p>
+          <p className="chat-welcome__hint">Try saying <strong>hi</strong> or <strong>שלום</strong></p>
         </div>
       </div>
     )
@@ -36,26 +49,36 @@ export function ChatArea({ messages, isTyping }: ChatAreaProps) {
                   <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                </svg>
+                <AssistantAvatar />
               )}
             </div>
             <div className="message__content">{msg.content}</div>
           </div>
         ))}
-        {isTyping && (
-          <div className="message message--assistant">
+
+        {typingPhase === 'thinking' && (
+          <div className="message message--assistant message--thinking">
             <div className="message__avatar">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-              </svg>
+              <AssistantAvatar />
             </div>
             <div className="message__typing">
               <span /><span /><span />
             </div>
           </div>
         )}
+
+        {typingPhase === 'streaming' && (
+          <div className="message message--assistant message--streaming">
+            <div className="message__avatar">
+              <AssistantAvatar />
+            </div>
+            <div className="message__content message__content--streaming">
+              {streamedText}
+              <span className="message__cursor" />
+            </div>
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </div>
     </div>

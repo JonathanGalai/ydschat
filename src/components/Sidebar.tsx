@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { Chat } from '../types/chat'
 
 interface SidebarProps {
@@ -23,7 +24,11 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <>
-      {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
+      <div
+        className={`sidebar-overlay ${isOpen ? 'sidebar-overlay--visible' : ''}`}
+        onClick={onClose}
+        aria-hidden={!isOpen}
+      />
       <aside className={`sidebar ${isOpen ? 'sidebar--open' : ''}`}>
         <div className="sidebar__header">
           <button className="sidebar__new-chat" onClick={onNewChat}>
@@ -41,10 +46,11 @@ export function Sidebar({
           ) : chats.length === 0 ? (
             <p className="sidebar__empty">No saved chats yet</p>
           ) : (
-            chats.map((chat) => (
+            chats.map((chat, index) => (
               <div
                 key={chat.id}
                 className={`sidebar__chat ${activeChatId === chat.id ? 'sidebar__chat--active' : ''}`}
+                style={{ '--chat-index': index } as CSSProperties}
               >
                 <button
                   className="sidebar__chat-btn"
